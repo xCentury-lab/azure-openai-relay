@@ -59,7 +59,10 @@
    - `AZURE_MODEL_MAP`: OpenAIのモデル名とAzureデプロイ名のマッピング (JSON形式)
      - 例: `{"gpt-3.5-turbo": "my-gpt35-deployment", "gpt-4": "my-gpt4-deployment"}`
      - クライアントから `model="gpt-3.5-turbo"` を指定すると、Azure上の `my-gpt35-deployment` にリクエストが飛びます。
+     - クライアントから `model="gpt-3.5-turbo"` を指定すると、Azure上の `my-gpt35-deployment` にリクエストが飛びます。
      - マッピングにないモデル名が指定された場合は、その名前がそのままデプロイ名として使用されます。
+   - `PROXY_API_KEY`: プロキシサーバーの認証用APIキー
+     - クライアントはこのキーを `Authorization: Bearer <KEY>` ヘッダーで送信する必要があります。
 
 ## 起動方法
 
@@ -130,7 +133,7 @@ PROXY_URL = "http://<Azure-VM-IP>:8000/v1"
 
 client = OpenAI(
     base_url=PROXY_URL,
-    api_key="dummy"  # プロキシ側で認証するため、クライアント側はダミーでOK
+    api_key="your_secret_proxy_key"  # .env で設定した PROXY_API_KEY を指定
 )
 
 response = client.chat.completions.create(
@@ -150,6 +153,7 @@ print(response.choices[0].message.content)
 ```bash
 curl -X POST "http://<Azure-VM-IP>:8000/v1/chat/completions" \
      -H "Content-Type: application/json" \
+     -H "Authorization: Bearer your_secret_proxy_key" \
      -d '{
            "model": "gpt-3.5-turbo",
            "messages": [{"role": "user", "content": "こんにちは"}]
@@ -158,5 +162,6 @@ curl -X POST "http://<Azure-VM-IP>:8000/v1/chat/completions" \
 
 ## 注意事項
 
-- 現在の構成では、プロキシサーバー自体への認証（Basic認証など）は実装されていません。オンプレミスネットワークなど、信頼できるネットワーク内での利用を想定しています。
+- `PROXY_API_KEY` を設定することで、プロキシサーバーへのアクセスに認証（Bearer Token）が必要になります。
+- オンプレミスネットワークなど、信頼できるネットワーク内での利用を想定していますが、APIキーによる認証を有効にすることを推奨します。
 - 必要に応じて、ファイアウォール（NSG）でポート 8000 へのアクセスを許可してください。
