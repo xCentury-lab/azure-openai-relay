@@ -1,6 +1,7 @@
 import os
 import json
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Depends
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.responses import JSONResponse, StreamingResponse
 from openai import AsyncAzureOpenAI
 from dotenv import load_dotenv
@@ -8,6 +9,16 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = FastAPI()
+
+# Security Scheme
+security = HTTPBearer()
+
+def verify_api_key(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    proxy_api_key = os.getenv("PROXY_API_KEY")
+    if proxy_api_key:
+        if credentials.credentials != proxy_api_key:
+            raise HTTPException(status_code=401, detail="Invalid API Key")
+    return credentials.credentials
 
 # Initialize Azure OpenAI Client
 # Ensure environment variables are set
@@ -25,7 +36,7 @@ client = AsyncAzureOpenAI(
     azure_endpoint=azure_endpoint
 )
 
-@app.post("/v1/chat/completions")
+@app.post("/v1/chat/completions", dependencies=[Depends(verify_api_key)])
 async def chat_completions(request: Request):
     try:
         body = await request.json()
