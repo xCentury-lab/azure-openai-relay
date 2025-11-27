@@ -151,6 +151,7 @@ print(response.choices[0].message.content)
 curl -X POST "http://<Azure-VM-IP>:8000/v1/chat/completions" \
      -H "Content-Type: application/json" \
      -d '{
+           "model": "gpt-3.5-turbo",
            "messages": [{"role": "user", "content": "こんにちは"}]
          }'
 ```
